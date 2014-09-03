@@ -229,10 +229,64 @@
         [peoplePicker pushViewController:personController animated:YES];
     } else {
         // Retrieve and return pickedContact information
-        CDVContact* pickedContact = [[CDVContact alloc] initFromABRecord:(ABRecordRef)person];
+        //CDVContact* pickedContact = [[CDVContact alloc] initFromABRecord:(ABRecordRef)person];
+        
+        NSArray *linked = (__bridge NSArray *)ABPersonCopyArrayOfAllLinkedPeople(person);  //person is an ABRecordRef
         NSArray* fields = [picker.options objectForKey:@"fields"];
-        NSDictionary* returnFields = [[CDVContact class] calcReturnFields:fields];
-        picker.pickedContactDictionary = [pickedContact toDictionary:returnFields];
+
+        NSMutableDictionary *mergedContact;
+        bool first = true;
+        NSDictionary* linkReturnFields = [[CDVContact class] calcReturnFields:fields];
+        for (id linkRef in linked) {
+            ABRecordRef linkedContactRef = (__bridge ABRecordRef) linkRef;
+            CDVContact* linkedContact = [[CDVContact alloc] initFromABRecord:(ABRecordRef)linkedContactRef];
+            NSDictionary* contactDictionary = [linkedContact toDictionary:linkReturnFields];
+            
+            if(first){
+                
+                mergedContact = [contactDictionary mutableCopy];
+                first = false;
+            }
+            else {
+                NSMutableArray *phone = [mergedContact valueForKey:@"phoneNumbers"];
+                NSMutableArray *email = [mergedContact valueForKey:@"emails"];
+                
+                for(NSString *key in [mergedContact allKeys])
+                {
+                    if([key  isEqual: @"phoneNumbers"]){
+                        NSArray *phoneLinked = [contactDictionary valueForKey:key];
+                        if(![phoneLinked isEqual:[NSNull null]]){
+                            if([phone isEqual:[NSNull null]]) {
+                                phone = [NSMutableArray array];
+                            }
+                            for(id kv in phoneLinked){
+                                [phone addObject: kv];
+                            }
+                            [mergedContact setObject:phone forKey:key];
+                        }
+                    }
+                    if([key  isEqual: @"emails"]){
+                        
+                        NSArray *emailLinked = [contactDictionary valueForKey:key];
+                        if(![emailLinked isEqual:[NSNull null]]){
+                            if([email isEqual:[NSNull null]]) {
+                                email = [NSMutableArray array];
+                            }
+                            for(id kv in emailLinked){
+                                [email addObject: kv];
+                            }
+                            [mergedContact setObject:email forKey:key];
+                        }
+                    }
+                }
+            }
+            //if (linkedContactRef)CFRelease(linkedContactRef);
+            //if(linkedContact)CFRelease((__bridge CFTypeRef)linkedContact);
+        }
+
+        if (linked) CFRelease((__bridge CFTypeRef)(linked));
+
+        picker.pickedContactDictionary = mergedContact; //[pickedContact toDictionary:mergedContact];
 
         CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:picker.pickedContactDictionary];
         [self.commandDelegate sendPluginResult:result callbackId:picker.callbackId];
