@@ -338,6 +338,7 @@
         [self.commandDelegate sendPluginResult:result callbackId:picker.callbackId];
 
         [[picker presentingViewController] dismissViewControllerAnimated:YES completion:nil];
+    }
 }
 
 // Called after a property has been selected by the user.
