@@ -192,7 +192,7 @@
 - (void)pickContact:(CDVInvokedUrlCommand *)command
 {
     // mimic chooseContact method call with required for us parameters
-    NSArray* desiredFields = [command.arguments objectAtIndex:0 withDefault:[NSNull null]];
+    NSArray* desiredFields = [command.arguments objectAtIndex:0 withDefault:[NSArray array]];
     if (desiredFields == nil || desiredFields.count == 0) {
         desiredFields = [NSArray arrayWithObjects:@"*", nil];
     }
@@ -214,6 +214,52 @@
 
 - (BOOL)peoplePickerNavigationController:(ABPeoplePickerNavigationController*)peoplePicker
       shouldContinueAfterSelectingPerson:(ABRecordRef)person
+{
+    [self peoplePickerNavigationController:peoplePicker didSelectPerson:person];
+    return NO;
+}
+
+- (BOOL)peoplePickerNavigationController:(ABPeoplePickerNavigationController*)peoplePicker
+      shouldContinueAfterSelectingPerson:(ABRecordRef)person property:(ABPropertyID)property identifier:(ABMultiValueIdentifier)identifier
+{
+    return YES;
+}
+
+- (void)peoplePickerNavigationControllerDidCancel:(ABPeoplePickerNavigationController*)peoplePicker
+{
+    // return contactId or invalid if none picked
+    CDVContactsPicker* picker = (CDVContactsPicker*)peoplePicker;
+
+    if (picker.allowsEditing) {
+        // get the info after possible edit
+        // if we got this far, user has already approved/ disapproved addressBook access
+        ABAddressBookRef addrBook = ABAddressBookCreateWithOptions(NULL, NULL);
+        ABRecordRef person = ABAddressBookGetPersonWithRecordID(addrBook, (int)[[picker.pickedContactDictionary objectForKey:kW3ContactId] integerValue]);
+        if (person) {
+            CDVContact* pickedContact = [[CDVContact alloc] initFromABRecord:(ABRecordRef)person];
+            NSArray* fields = [picker.options objectForKey:@"fields"];
+            NSDictionary* returnFields = [[CDVContact class] calcReturnFields:fields];
+            picker.pickedContactDictionary = [pickedContact toDictionary:returnFields];
+        }
+        CFRelease(addrBook);
+    }
+    
+    CDVPluginResult* result = nil;
+    NSNumber* recordId = picker.pickedContactDictionary[kW3ContactId];
+    
+    if ([recordId isEqualToNumber:[NSNumber numberWithInt:kABRecordInvalidID]]) {
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_NO_RESULT];
+    } else {
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:picker.pickedContactDictionary];
+    }
+    
+    [self.commandDelegate sendPluginResult:result callbackId:picker.callbackId];
+
+    [[peoplePicker presentingViewController] dismissViewControllerAnimated:YES completion:nil];
+}
+
+// Called after a person has been selected by the user.
+- (void)peoplePickerNavigationController:(ABPeoplePickerNavigationController*)peoplePicker didSelectPerson:(ABRecordRef)person
 {
     CDVContactsPicker* picker = (CDVContactsPicker*)peoplePicker;
     NSNumber* pickedId = [NSNumber numberWithInt:ABRecordGetRecordID(person)];
@@ -292,38 +338,12 @@
         [self.commandDelegate sendPluginResult:result callbackId:picker.callbackId];
 
         [[picker presentingViewController] dismissViewControllerAnimated:YES completion:nil];
-    }
-    return NO;
 }
 
-- (BOOL)peoplePickerNavigationController:(ABPeoplePickerNavigationController*)peoplePicker
-      shouldContinueAfterSelectingPerson:(ABRecordRef)person property:(ABPropertyID)property identifier:(ABMultiValueIdentifier)identifier
+// Called after a property has been selected by the user.
+- (void)peoplePickerNavigationController:(ABPeoplePickerNavigationController*)peoplePicker didSelectPerson:(ABRecordRef)person property:(ABPropertyID)property identifier:(ABMultiValueIdentifier)identifier
 {
-    return YES;
-}
-
-- (void)peoplePickerNavigationControllerDidCancel:(ABPeoplePickerNavigationController*)peoplePicker
-{
-    // return contactId or invalid if none picked
-    CDVContactsPicker* picker = (CDVContactsPicker*)peoplePicker;
-
-    if (picker.allowsEditing) {
-        // get the info after possible edit
-        // if we got this far, user has already approved/ disapproved addressBook access
-        ABAddressBookRef addrBook = ABAddressBookCreateWithOptions(NULL, NULL);
-        ABRecordRef person = ABAddressBookGetPersonWithRecordID(addrBook, (int)[[picker.pickedContactDictionary objectForKey:kW3ContactId] integerValue]);
-        if (person) {
-            CDVContact* pickedContact = [[CDVContact alloc] initFromABRecord:(ABRecordRef)person];
-            NSArray* fields = [picker.options objectForKey:@"fields"];
-            NSDictionary* returnFields = [[CDVContact class] calcReturnFields:fields];
-            picker.pickedContactDictionary = [pickedContact toDictionary:returnFields];
-        }
-        CFRelease(addrBook);
-    }
-    CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:picker.pickedContactDictionary];
-    [self.commandDelegate sendPluginResult:result callbackId:picker.callbackId];
-
-    [[peoplePicker presentingViewController] dismissViewControllerAnimated:YES completion:nil];
+    // not implemented
 }
 
 - (void)search:(CDVInvokedUrlCommand*)command
