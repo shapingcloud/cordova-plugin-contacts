@@ -19,7 +19,14 @@
 
 # org.apache.cordova.contacts
 
-Provides access to the device contacts database.
+This plugin defines a global `navigator.contacts` object, which provides access to the device contacts database.
+
+Although the object is attached to the global scoped `navigator`, it is not available until after the `deviceready` event.
+
+    document.addEventListener("deviceready", onDeviceReady, false);
+    function onDeviceReady() {
+        console.log(navigator.contacts);
+    }
 
 __WARNING__: Collection and use of contact data raises
 important privacy issues.  Your app's privacy policy should discuss
@@ -44,7 +51,7 @@ contact data.  For more information, please see the Privacy Guide.
 
 ### Firefox OS Quirks
 
-Create __www/manifest.webapp__ as described in 
+Create __www/manifest.webapp__ as described in
 [Manifest Docs](https://developer.mozilla.org/en-US/Apps/Developing/Manifest).
 Add relevant permisions.
 There is also a need to change the webapp type to "privileged"  - [Manifest Docs](https://developer.mozilla.org/en-US/Apps/Developing/Manifest#type).
@@ -133,7 +140,7 @@ parameter to control which contact properties must be returned back.
 
 - __contactError__: Error callback function, invoked when an error occurs. [Optional]
 
-- __contactFindOptions__: Search options to filter navigator.contacts. [Optional] 
+- __contactFindOptions__: Search options to filter navigator.contacts. [Optional]
 	
 	Keys include:
 
@@ -591,7 +598,7 @@ Contains different kinds of information about a `Contact` object's name.
 ### Supported Platforms
 
 - Amazon Fire OS
-- Android 2.X
+- Android
 - BlackBerry 10
 - Firefox OS
 - iOS

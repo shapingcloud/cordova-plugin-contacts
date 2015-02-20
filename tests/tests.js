@@ -1,4 +1,4 @@
-/*
+﻿/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -24,8 +24,9 @@ exports.defineAutoTests = function () {
   // all of the setup/teardown test methods can reference the following variables to make sure to do the right cleanup
   var gContactObj = null,
     gContactId = null,
-    isWindowsPhone = cordova.platformId == 'windowsphone';
-
+    isWindowsPhone8 = cordova.platformId == 'windowsphone',
+    isWindows = (cordova.platformId === "windows") || (cordova.platformId === "windows8"),
+    isWindowsPhone81 =  isWindows && WinJS.Utilities.isPhone;
   var fail = function(done) {
     expect(true).toBe(false);
     done();
@@ -51,6 +52,11 @@ exports.defineAutoTests = function () {
       });
       describe("find method", function() {
           it("contacts.spec.3 success callback should be called with an array", function(done) {
+              // Find method is not supported on Windows platform
+              if (isWindows && !isWindowsPhone81) {
+                  pending();
+                  return;
+              }
               var win = function(result) {
                       expect(result).toBeDefined();
                       expect(result instanceof Array).toBe(true);
@@ -63,6 +69,11 @@ exports.defineAutoTests = function () {
               navigator.contacts.find(["displayName", "name", "phoneNumbers", "emails"], win, fail.bind(null, done), obj);
           });
           it("success callback should be called with an array, even if partial ContactFindOptions specified", function (done) {
+              // Find method is not supported on Windows platform
+              if (isWindows && !isWindowsPhone81) {
+                  pending();
+                  return;
+              }
               var win = function (result) {
                   expect(result).toBeDefined();
                   expect(result instanceof Array).toBe(true);
@@ -99,10 +110,12 @@ exports.defineAutoTests = function () {
               afterEach(removeContact);
 
               it("contacts.spec.6 should be able to find a contact by name", function (done) {
-                  if (isWindowsPhone) {
-                      done();
-                      return;
+                  // Find method is not supported on Windows Store apps.
+                  // also this test will be skipped for Windows Phone 8.1 because function "save" not supported on WP8.1
+                  if (isWindows || isWindowsPhone8) {
+                      pending();
                   }
+
                   var foundName = function(result) {
                           var bFound = false;
                           try {
@@ -275,10 +288,11 @@ exports.defineAutoTests = function () {
       });
       describe('save method', function () {
           it("contacts.spec.20 should be able to save a contact", function (done) {
-              if (isWindowsPhone) {
-                  done();
-                  return;
+              // Save method is not supported on Windows platform
+              if (isWindows || isWindowsPhone8) {
+                  pending();
               }
+
               var bDay = new Date(1976, 6,4);
               gContactObj = navigator.contacts.create({"gender": "male", "note": "my note", "name": {"familyName": "Delete", "givenName": "Test"}, "emails": [{"value": "here@there.com"}, {"value": "there@here.com"}], "birthday": bDay});
 
@@ -302,10 +316,11 @@ exports.defineAutoTests = function () {
            });
           // HACK: there is a reliance between the previous and next test. This is bad form.
           it("contacts.spec.21 update a contact", function (done) {
-              if (isWindowsPhone) {
-                  done();
-                  return;
+              // Save method is not supported on Windows platform
+              if (isWindows || isWindowsPhone8) {
+                  pending();
               }
+
               expect(gContactObj).toBeDefined();
 
               var bDay = new Date(1975, 5,4);
@@ -345,6 +360,11 @@ exports.defineAutoTests = function () {
               rmContact.remove(win, fail);
           });
           it("contacts.spec.23 calling remove on a contact that does not exist should return ContactError.UNKNOWN_ERROR", function(done) {
+               // remove method is not supported on Windows platform
+              if (isWindows) {
+                  pending();
+                  return;
+              }
               var rmWin = fail;
               var rmFail = function(result) {
                   expect(result.code).toBe(ContactError.UNKNOWN_ERROR);
@@ -361,10 +381,11 @@ exports.defineAutoTests = function () {
           afterEach(removeContact);
 
           it("contacts.spec.24 Creating, saving, finding a contact should work, removing it should work, after which we should not be able to find it, and we should not be able to delete it again.", function (done) {
-              if (isWindowsPhone) {
-                  done();
-                  return;
+              // Save method is not supported on Windows platform
+              if (isWindows || isWindowsPhone8) {
+                  pending();
               }
+
               gContactObj = new Contact();
               gContactObj.name = new ContactName();
               gContactObj.name.familyName = "DeleteMe";
