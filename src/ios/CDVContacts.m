@@ -153,26 +153,34 @@
     return YES;
 }
 
-- (void)chooseContact:(CDVInvokedUrlCommand*)command
+(void)chooseContact:(CDVInvokedUrlCommand*)command
 {
-    NSString* callbackId = command.callbackId;
-    NSDictionary* options = [command argumentAtIndex:0 withDefault:[NSNull null]];
+    ABAddressBookRef addressBook =  ABAddressBookCreateWithOptions(NULL, NULL);
+    ABAddressBookRequestAccessWithCompletion(addressBook, ^(bool granted, CFErrorRef error) {
+        NSLog(@"Access to contacts %@ by user", granted ? @"granted" : @"denied");
+        NSString* callbackId = command.callbackId;
+        NSDictionary* options = [command argumentAtIndex:0 withDefault:[NSNull null]];
+        
+        
+        
+        CDVContactsPicker* pickerController = [[CDVContactsPicker alloc] init];
+        
+        pickerController.peoplePickerDelegate = self;
+        pickerController.callbackId = callbackId;
+        pickerController.options = options;
+        pickerController.pickedContactDictionary = [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithInt:kABRecordInvalidID], kW3ContactId, nil];
+        id allowsEditingValue = [options valueForKey:@"allowsEditing"];
+        BOOL allowsEditing = NO;
+        if ([allowsEditingValue isKindOfClass:[NSNumber class]]) {
+            allowsEditing = [(NSNumber*)allowsEditingValue boolValue];
+        }
+        pickerController.allowsEditing = allowsEditing;
+        
+        [self.viewController presentViewController:pickerController animated:YES completion:nil];
 
-    CDVContactsPicker* pickerController = [[CDVContactsPicker alloc] init];
-
-    pickerController.peoplePickerDelegate = self;
-    pickerController.callbackId = callbackId;
-    pickerController.options = options;
-    pickerController.pickedContactDictionary = [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithInt:kABRecordInvalidID], kW3ContactId, nil];
-    id allowsEditingValue = [options valueForKey:@"allowsEditing"];
-    BOOL allowsEditing = NO;
-    if ([allowsEditingValue isKindOfClass:[NSNumber class]]) {
-        allowsEditing = [(NSNumber*)allowsEditingValue boolValue];
+    });
     }
-    pickerController.allowsEditing = allowsEditing;
 
-    [self.viewController presentViewController:pickerController animated:YES completion:nil];
-}
 
 - (void)pickContact:(CDVInvokedUrlCommand *)command
 {
