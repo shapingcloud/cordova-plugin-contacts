@@ -153,7 +153,7 @@
     return YES;
 }
 
-(void)chooseContact:(CDVInvokedUrlCommand*)command
+- (void)chooseContact:(CDVInvokedUrlCommand*)command
 {
     ABAddressBookRef addressBook =  ABAddressBookCreateWithOptions(NULL, NULL);
     ABAddressBookRequestAccessWithCompletion(addressBook, ^(bool granted, CFErrorRef error) {
