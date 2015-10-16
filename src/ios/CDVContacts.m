@@ -161,23 +161,27 @@
         NSString* callbackId = command.callbackId;
         NSDictionary* options = [command argumentAtIndex:0 withDefault:[NSNull null]];
         
+        if (granted) {
         
-        
-        CDVContactsPicker* pickerController = [[CDVContactsPicker alloc] init];
-        
-        pickerController.peoplePickerDelegate = self;
-        pickerController.callbackId = callbackId;
-        pickerController.options = options;
-        pickerController.pickedContactDictionary = [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithInt:kABRecordInvalidID], kW3ContactId, nil];
-        id allowsEditingValue = [options valueForKey:@"allowsEditing"];
-        BOOL allowsEditing = NO;
-        if ([allowsEditingValue isKindOfClass:[NSNumber class]]) {
-            allowsEditing = [(NSNumber*)allowsEditingValue boolValue];
+         CDVContactsPicker* pickerController = [[CDVContactsPicker alloc] init];
+         
+         pickerController.peoplePickerDelegate = self;
+         pickerController.callbackId = callbackId;
+         pickerController.options = options;
+         pickerController.pickedContactDictionary = [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithInt:kABRecordInvalidID], kW3ContactId, nil];
+         id allowsEditingValue = [options valueForKey:@"allowsEditing"];
+         BOOL allowsEditing = NO;
+         if ([allowsEditingValue isKindOfClass:[NSNumber class]]) {
+             allowsEditing = [(NSNumber*)allowsEditingValue boolValue];
+         }
+         pickerController.allowsEditing = allowsEditing;
+         
+         [self.viewController presentViewController:pickerController animated:YES completion:nil];
+         
+        }else{
+         //TODO: Native alert to inform user that they need to update their privacy settings. 
+         NSLog(@"Please grant Givvit access to your contacts in your privacy settings.");
         }
-        pickerController.allowsEditing = allowsEditing;
-        
-        [self.viewController presentViewController:pickerController animated:YES completion:nil];
-
     });
     }
 
